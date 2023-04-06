@@ -1,13 +1,13 @@
 import configparser
 import logging
-
+import os
 import telegram
 from flask import Flask, request
 from telegram.ext import Dispatcher, MessageHandler, Filters, CommandHandler
 
-# Load data from config.ini file
-config = configparser.ConfigParser()
-config.read('config.ini')
+# # Load data from config.ini file
+# config = configparser.ConfigParser()
+# config.read('config.ini')
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 # Initial Flask app
 app = Flask(__name__)
 
-# Initial bot by Telegram access token
-bot = telegram.Bot(token=(config['TELEGRAM']['ACCESS_TOKEN']))
-
+# # Initial bot by Telegram access token
+# bot = telegram.Bot(token=(config['TELEGRAM']['ACCESS_TOKEN']))
+bot = telegram.Bot(token = str(os.getenv("TELEGRAM_BOT_TOKEN")))
 
 @app.route('/hook', methods=['POST'])
 def webhook_handler():
