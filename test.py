@@ -1,189 +1,91 @@
-# from telegram import Update
-# from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ConversationHandler, ContextTypes
+import os
+import logging
+import configparser
+from flask import Flask, request
 
-# import sqlite3
-
-# # 定義對話的狀態
-# NAME, EMAIL = range(2)
-
-# # 定義處理/start指令的函式
-# async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     # 回覆一則訊息
-#     await update.message.reply_text('歡迎使用本機器人！請輸入 /help 以查看可用的指令。')
-
-
-
-# def start_add_info(update: Update, context: dict):
-#     # 回覆使用者，開始一個新的對話
-#     update.message.reply_text('請輸入你的名字：')
-
-#     # 設置下一步對話的狀態
-#     return NAME
-
-# def add_name(update: Update, context: dict):
-#     # 取得使用者輸入的名字
-#     name = update.message.text
-
-#     # 將名字存入 context 中，以便下一步對話使用
-#     context['name'] = name
-
-#     # 回覆使用者，詢問電子郵件地址
-#     update.message.reply_text('請輸入你的電子郵件地址：')
-
-#     # 設置下一步對話的狀態
-#     return EMAIL
-
-# def add_email(update: Update, context: dict):
-#     # 取得使用者輸入的電子郵件地址
-#     email = update.message.text
-
-#     # 將資料儲存到 SQLite 資料庫中
-#     # conn = sqlite3.connect('data.db')
-#     # c = conn.cursor()
-#     # c.execute('INSERT INTO users (name, email) VALUES (?, ?)', (context['name'], email))
-#     # conn.commit()
-#     # conn.close()
-
-#     # 回覆使用者，對話結束
-#     update.message.reply_text('資料已儲存，謝謝！  name = ', context['name'], 'email = ', email)
-
-#     # 結束對話
-#     return ConversationHandler.END
-
-# def cancel(update: Update, context: dict):
-#     # 回覆使用者，對話已取消
-#     update.message.reply_text('對話已取消')
-
-#     # 結束對話
-#     return ConversationHandler.END
-
-
-# app = ApplicationBuilder().token("6058955159:AAHPinHT7IWkIPQJNpeN1-4pL2qddNy8W-w").build()
-
-# # 建立/start指令的處理器
-# start_handler = CommandHandler('start', start)
-
-# conv_handler = ConversationHandler(
-#     entry_points=[CommandHandler('add_info', start_add_info)],
-#     states={
-#         NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_name)],
-#         EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_email)]
-#     },
-#     fallbacks=[CommandHandler('cancel', cancel)]
-# )
-
-
-# app.add_handler(start_handler)
-# app.add_handler(conv_handler)
-
-# app.run_polling
-
-
-import sqlite3
+import telegram
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
-
-# 定義對話的狀態
-NAME, EMAIL = range(2)
+from telegram.ext import Updater, Filters, CallbackContext
+from telegram.ext import MessageHandler, CommandHandler
 
 
-# 定義處理/start指令的函式
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # 回覆一則訊息
-    await update.message.reply_text('歡迎使用本機器人！請輸入 /help 以查看可用的指令。')
+# Load data from config.ini file
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# 設定 bot token 和 webhook URL
+TOKEN = config['TELEGRAM']['ACCESS_TOKEN']
+WEBHOOK_URL = config['TELEGRAM']['WEBHOOK_URL']
 
 
-# 定義處理/help指令的函式
-async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # 回覆一則訊息，列出可用的指令
-    message = '/start - 開始使用本機器人\n/add_info - 新增一條資訊'
-    await update.message.reply_text(message)
+# 創建 Flask 應用程序對象
+app = Flask(__name__)
+
+logging.basicConfig(level=logging.DEBUG)
 
 
-# 定義處理/add_info指令的函式
-async def add_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # 獲取使用者傳來的資訊
-    info = update.message.text
+# 定義 /start 指令處理函式
+def start(update: Update, context: CallbackContext):
+    context.bot.send_message(
+        chat_id=update.message.chat.id, text="歡迎使用本機器人！")
 
-    # 回覆一則訊息
-    await update.message.reply_text(f'已新增一筆資訊：{info}')
+# 定義 /help 指令處理函式
+def help(update: Update, context: CallbackContext):
+    context.bot.send_message(
+        chat_id=update.message.chat.id, text="這是一個 Telegram Bot，支援以下指令：\n\n/start - 開始使用\n/help - 獲取幫助\n/info - 獲取信息")
 
+# 定義 /info 指令處理函式
+def info(update: Update, context: CallbackContext):
+    context.bot.send_message(
+        chat_id=update.message.chat.id, text="這是一個 Telegram Bot 程式，使用 python-telegram-bot 套件版本 13.15。")
 
-async def start_add_info(update: Update, context: dict):
-    # 回覆使用者，開始一個新的對話
-    await update.message.reply_text('請輸入你的名字：')
-
-    # 設置下一步對話的狀態
-    return NAME
-
-async def add_name(update: Update, context: dict):
-    # 取得使用者輸入的名字
-    name = update.message.text
-
-    # 將名字存入 context 中，以便下一步對話使用
-    context['name'] = name
-
-    # 回覆使用者，詢問電子郵件地址
-    await update.message.reply_text('請輸入你的電子郵件地址：')
-
-    # 設置下一步對話的狀態
-    return EMAIL
-
-async def add_email(update: Update, context: dict):
-    # 取得使用者輸入的電子郵件地址
-    email = update.message.text
-
-    # 將資料儲存到 SQLite 資料庫中
-    # conn = sqlite3.connect('data.db')
-    # c = conn.cursor()
-    # c.execute('INSERT INTO users (name, email) VALUES (?, ?)', (context['name'], email))
-    # conn.commit()
-    # conn.close()
-
-    # 回覆使用者，對話結束
-    await update.message.reply_text('資料已儲存，謝謝！  name = ', context['name'], 'email = ', email)
-
-    # 結束對話
-    return ConversationHandler.END
-
-async def cancel(update: Update, context: dict):
-    # 回覆使用者，對話已取消
-    await update.message.reply_text('對話已取消')
-
-    # 結束對話
-    return ConversationHandler.END
-
-# 建立應用程序
-app = ApplicationBuilder().token('6058955159:AAHPinHT7IWkIPQJNpeN1-4pL2qddNy8W-w').build()
-
-# 建立/start指令的處理器
-start_handler = CommandHandler('start', start)
-
-# 建立/help指令的處理器
-help_handler = CommandHandler('help', help)
-
-# 建立/add_info指令的處理器
-add_info_handler = CommandHandler('add_info', add_info)
-
-# 建立資訊輸入的處理器
-# message_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, add_info)
+def reply_handler(update: Update, context: CallbackContext):
+    """Reply message."""
+    if update.message:
+        context.bot.send_message(chat_id=update.message.chat.id, text=update.message.text)
 
 
-conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('add_info_test', start_add_info)],
-    states={
-        NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_name)],
-        EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_email)]
-    },
-    fallbacks=[CommandHandler('cancel', cancel)]
-)
+# def message_handler(update: Update, context: CallbackContext):
+#     context.bot.send_message(chat_id=update.message.chat.id, text=update.message.text)
 
-# 將處理器添加到應用程序
-app.add_handler(start_handler)
-app.add_handler(help_handler)
-app.add_handler(add_info_handler)
-# app.add_handler(message_handler)
-app.add_handler(conv_handler)
+# def start(update: Update, context: CallbackContext):  # New
+#     context.bot.send_message(
+#         chat_id=update.message.chat.id, text="Hello")
 
-# 啟動應用程序
-app.run_polling()
+# 定義 webhook 接收請求的路由
+@app.route('/callback', methods=['POST'])
+def webhook():
+    # 從 POST 請求中解析更新
+    update = telegram.Update.de_json(request.get_json(force=True), updater.bot)
+    # 將更新傳遞給調度器進行處理
+    updater.dispatcher.process_update(update)
+    # 回應 OK 狀態碼
+    return 'OK'
+
+# def webhook(request):
+#     update = telegram.Update.de_json(request.get_json(force=True), updater.bot)
+#     chat_id = update.message.chat_id
+#     text = update.message.text
+#     context = CallbackContext(dispatcher=updater.dispatcher, job_queue=None, chat_data={}, user_data={})
+#     context.bot.send_message(chat_id=chat_id, text=text)
+
+
+updater = Updater(TOKEN)
+updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, reply_handler))
+updater.dispatcher.add_handler(CommandHandler("start", callback=start))
+updater.dispatcher.add_handler(CommandHandler("help", callback=help))
+updater.dispatcher.add_handler(CommandHandler("info", callback=info))
+
+if __name__ == "__main__":
+    # updater.start_polling()
+    # updater.idle()
+    # updater.stop()
+
+    updater.start_webhook(
+        listen = "127.0.0.1",
+        port = 8443,
+        url_path = "callback",
+        webhook_url = WEBHOOK_URL
+    ) 
+
+    app.run()
