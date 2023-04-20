@@ -17,6 +17,8 @@ config.read('config.ini')
 TOKEN = config['TELEGRAM']['ACCESS_TOKEN']
 WEBHOOK_URL = config['TELEGRAM']['WEBHOOK_URL']
 
+subscribers = []
+
 
 # 創建 Flask 應用程序對象
 app = Flask(__name__)
@@ -38,6 +40,29 @@ def help(update: Update, context: CallbackContext):
 def info(update: Update, context: CallbackContext):
     context.bot.send_message(
         chat_id=update.message.chat.id, text="這是一個 Telegram Bot 程式，使用 python-telegram-bot 套件版本 13.15。")
+
+# 定義處理 /subscribe 指令的函式
+def subscribe(update: Update, context: CallbackContext):
+    user_id = update.message.chat.id
+    if user_id not in subscribers:
+        subscribers.append(user_id)
+        update.message.reply_text('您已成功訂閱 BTC 價格提醒！')
+    else:
+        update.message.reply_text('您已訂閱 BTC 價格提醒！')
+
+# 定義處理 /unsubscribe 指令的函式
+def unsubscribe(update: Update, context: CallbackContext):
+    # 將用戶從訂閱列表中刪除
+    user_id = update.message.chat.id
+    if user_id in subscribers:
+        subscribers.remove(user_id)
+        update.message.reply_text('您已成功取消訂閱 BTC 價格提醒！')
+    else:
+        update.message.reply_text('您尚未訂閱 BTC 價格提醒！')
+
+
+
+
 
 def reply_handler(update: Update, context: CallbackContext):
     """Reply message."""
@@ -75,6 +100,9 @@ updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, r
 updater.dispatcher.add_handler(CommandHandler("start", callback=start))
 updater.dispatcher.add_handler(CommandHandler("help", callback=help))
 updater.dispatcher.add_handler(CommandHandler("info", callback=info))
+updater.dispatcher.add_handler(CommandHandler("subscribe", callback=subscribe))
+updater.dispatcher.add_handler(CommandHandler("unsubscribe", callback=unsubscribe))
+
 
 if __name__ == "__main__":
     # updater.start_polling()

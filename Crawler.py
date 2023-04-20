@@ -4,12 +4,6 @@ import requests
 import time
 import datetime
 
-BASE_URL="https://api.binance.com/"
-PATH_CANDLESTICK_DATA = "api/v3/klines"
-PATH_EXCHANGEINFO = "api/v3/exchangeInfo"
-PATH_PRICE = "api/v3/ticker/price"
-
-
 def is_multiple_of_k_minutes(k):
     now = datetime.datetime.now()
     minutes = now.hour * 60 + now.minute
@@ -25,17 +19,46 @@ def current_finish_kline_time(k):
 
     dt = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
     unix = int(dt.timestamp())
-    print("Finish kline time = ", datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d %H:%M'), "   unix = ", unix)
+    print(f"Finish kline time = {datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d %H:%M')}, unix = {unix}")
     
     return unix
 
-def get_kline(symbol = "BTCUSDT", interval = "15m", startTime = str(current_finish_kline_time(15) * 1000), endTime = str(current_finish_kline_time(15) * 1000 + 1)):
-    if (interval not in ["1s", "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1M"]):
-        return 0
+def get_kline(symbol = None, interval = None, startTime = None, endTime = None):
+    BASE_URL="https://api.binance.com/"
+    PATH_CANDLESTICK_DATA = "api/v3/klines"
+    PATH_EXCHANGEINFO = "api/v3/exchangeInfo"
+    PATH_PRICE = "api/v3/ticker/price"
 
-    # symbol = "BTCUSDT"
-    # interval = "15m"  # 
-    # startTime = str(current_finish_kline_time(15) * 1000)
+    interval_cases = {
+        '1m': 1,
+        '3m': 3,
+        '5m': 5,
+        '15m': 15,
+        '30m': 30,
+        '1h': 60,
+        '2h': 120,
+        '4h': 240,
+        '6h': 360,
+        '8h': 480,
+        '12h': 720,
+        '1d': 1440,
+        '3d': 4320,
+        "1w": 10080,
+        "1M": 43200 # 30 days
+    }
+    k_time = interval_cases.get(interval, 0)
+    
+    if k_time == 0:
+        raise ValueError("Invalid interval")
+    if symbol == None:
+        raise ValueError("Invalid symbol")
+
+    if startTime == None:
+        startTime = str(current_finish_kline_time(15) * 1000)
+    if endTime == None:
+        endTime = str((current_finish_kline_time(15) + 1) * 1000)
+
+# ====================================================================================================
 
 
     url = f"{BASE_URL}{PATH_CANDLESTICK_DATA}?symbol={symbol}&interval={interval}&startTime={startTime}&endTime={endTime}"
@@ -61,7 +84,7 @@ def get_kline(symbol = "BTCUSDT", interval = "15m", startTime = str(current_fini
 
 
 if __name__ == '__main__':
-    l = get_kline()
+    l = get_kline(symbol = "BTCUSDT", interval = "15m")
     # print(type(int(float(l[1]))))
 
 # [
