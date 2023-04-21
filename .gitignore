@@ -1,4 +1,5 @@
 ENV/
 *.pyc
+*.ini
 test.py
 temp.py

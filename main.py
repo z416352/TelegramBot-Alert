@@ -3,6 +3,7 @@ import logging
 import configparser
 from flask import Flask, request
 
+import requests
 import telegram
 from telegram import Update
 from telegram.ext import Updater, Filters, CallbackContext
@@ -16,7 +17,9 @@ config.read('config.ini')
 # 設定 bot token 和 webhook URL
 TOKEN = config['TELEGRAM']['ACCESS_TOKEN']
 WEBHOOK_URL = config['TELEGRAM']['WEBHOOK_URL']
-
+Info_Webhook_URL = f"https://api.telegram.org/bot{TOKEN}/getWebhookInfo"
+Set_Webhook_URL = f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={WEBHOOK_URL}"
+Delete_WebhookInfo_URL = f"https://api.telegram.org/bot{TOKEN}/deleteWebhook"
 
 # 創建 Flask 應用程序對象
 app = Flask(__name__)
@@ -44,6 +47,11 @@ def reply_handler(update: Update, context: CallbackContext):
     if update.message:
         context.bot.send_message(chat_id=update.message.chat.id, text=update.message.text)
 
+@app.route("/")
+@app.route("/hello")
+def hello():
+    return "Hello, World!"
+
 
 # 定義 webhook 接收請求的路由
 @app.route('/callback', methods=['POST'])
@@ -62,16 +70,8 @@ updater.dispatcher.add_handler(CommandHandler("help", callback=help))
 updater.dispatcher.add_handler(CommandHandler("info", callback=info))
 
 if __name__ == "__main__":
-    # updater.start_polling()
-    # updater.idle()
-    # updater.stop()
+    r = requests.get(Delete_WebhookInfo_URL)
+    r = requests.get(Set_Webhook_URL)
+    print(r.text)
 
-    updater.start_webhook(
-        listen = "127.0.0.1",
-        port = 8443,
-        url_path = "callback",
-        webhook_url = WEBHOOK_URL
-    ) 
-
-    app.run()
-
+    app.run(host='0.0.0.0', debug=True)
