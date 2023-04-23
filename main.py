@@ -72,6 +72,7 @@ updater.dispatcher.add_handler(CommandHandler("info", callback=info))
 if __name__ == "__main__":
     r = requests.get(Delete_WebhookInfo_URL)
     r = requests.get(Set_Webhook_URL)
+    r = requests.get(Info_Webhook_URL)
     print(r.text)
 
-    app.run(host='0.0.0.0', debug=True)
+    app.run(debug=True)
