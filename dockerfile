@@ -1,5 +1,6 @@
 FROM python:3.8-slim
-COPY . /TelegramBot
+
+COPY ["main.py", "flask_test.py", "config.ini", "requirements.txt", "Conversation.py", "/TelegramBot/"]
 WORKDIR /TelegramBot
 
 RUN apt update &&\

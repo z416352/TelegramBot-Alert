@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+  telegram-bot:
+    container_name: telegram-bot
+    image: telegram-bot:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - db-data:/TelegramBot/Alert_DB
+    networks:
+      - bot_network
+
+# volumes:
+#   db-data:
+
+# networks: # 定義網路
+#   bot_network:

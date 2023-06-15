@@ -8,7 +8,9 @@ import telegram
 from telegram import Update
 from telegram.ext import Updater, Filters, CallbackContext
 from telegram.ext import MessageHandler, CommandHandler
+import Conversation
 
+# id = 998618031
 
 # Load data from config.ini file
 config = configparser.ConfigParser()
@@ -46,12 +48,25 @@ def reply_handler(update: Update, context: CallbackContext):
     """Reply message."""
     if update.message:
         context.bot.send_message(chat_id=update.message.chat.id, text=update.message.text)
+        # context.bot.send_message(chat_id=update.message.chat.id, text=update.message.chat.id)
 
+    
+    
 @app.route("/")
 @app.route("/hello")
 def hello():
     return "Hello, World!"
 
+@app.route("/Send_Message", methods=['POST'])
+def Send_Message():
+    msg = request.values.get("Message")
+    chat_ID = request.form.get("Chat_ID")
+    # print(f"msg = {msg}, chat_ID = {chat_ID}")
+
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_ID}&text={msg}'
+    requests.post(url)
+    
+    return f"msg = {msg}, chat_ID = {chat_ID}"
 
 # 定義 webhook 接收請求的路由
 @app.route('/callback', methods=['POST'])
@@ -63,7 +78,8 @@ def webhook():
     # 回應 OK 狀態碼
     return 'OK'
 
-updater = Updater(TOKEN)
+updater = Updater(token=TOKEN, use_context=True)
+updater.dispatcher.add_handler(Conversation.conv_handler)
 updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, reply_handler))
 updater.dispatcher.add_handler(CommandHandler("start", callback=start))
 updater.dispatcher.add_handler(CommandHandler("help", callback=help))
@@ -74,5 +90,7 @@ if __name__ == "__main__":
     r = requests.get(Set_Webhook_URL)
     r = requests.get(Info_Webhook_URL)
     print(r.text)
+
+    # message_pass_handler(998618031, "test")
 
     app.run(host='0.0.0.0', port=5000, debug=True)
