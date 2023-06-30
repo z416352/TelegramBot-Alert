@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # 关闭数据库连接
     cursor.close()
     conn.close()
+    
 
-
-    l = Crawler.get_kline(symbol = "BTCUSDT", interval = "15m")
+    l = Crawler.get_kline(symbol = "BTCUSDT", interval = "1h", n=10)
     # print(type(int(float(l[1]))))

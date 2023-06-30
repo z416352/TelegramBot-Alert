@@ -44,24 +44,28 @@ def is_multiple_of_k_minutes(k):
     
     return minutes % k == 0
 
-def current_finish_kline_time(k):
+def current_finish_kline_time(time_frame, n_bar):
     # UTC => 因為是GCP的環境，不同的環境這邊吃到的可能會不相同
     # 不能修改，因為 Binance 那邊吃的時間是 UTC
     now = datetime.datetime.now() 
           
-    while(now.minute % k != 0):
+    while(now.minute % time_frame != 0):
         now -= datetime.timedelta(minutes = 1)
-    now -= datetime.timedelta(minutes = k)
+    # now -= datetime.timedelta(minutes = (time_frame))
+    start = now - datetime.timedelta(minutes = (time_frame*n_bar))
+    end = now - datetime.timedelta(minutes = (time_frame)) + datetime.timedelta(seconds=1)
 
-    dt = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
-    unix = int(dt.timestamp())
+
+    start_dt = datetime.datetime(start.year, start.month, start.day, start.hour, start.minute)
+    end_dt = datetime.datetime(end.year, end.month, end.day, end.hour, end.minute)
+    
+    start_unix = int(start_dt.timestamp())
+    end_unix = int(end_dt.timestamp())
     # print(f"Finish kline time = {datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d %H:%M')}, unix = {unix}")
     
-    return unix
+    return start_unix, end_unix
 
-def get_kline(symbol = None, interval = None, startTime = None, endTime = None):
-    allLogger.debug('This is debug level log.')
-
+def get_kline(symbol = None, interval = None, n=1):
     BASE_URL="https://api.binance.com/"
     PATH_CANDLESTICK_DATA = "api/v3/klines"
     PATH_EXCHANGEINFO = "api/v3/exchangeInfo"
@@ -85,10 +89,18 @@ def get_kline(symbol = None, interval = None, startTime = None, endTime = None):
     }
     k_time = interval_cases.get(interval, 0)
     
-    if k_time == 0: raise ValueError("Invalid interval")
-    if symbol == None:  raise ValueError("Invalid symbol")
-    if startTime == None:   startTime = str(current_finish_kline_time(15) * 1000)
-    if endTime == None: endTime = str((current_finish_kline_time(15) + 1) * 1000)
+    if k_time == 0: 
+        allLogger.error(f"Invalid interval. Your 'interval' is '{interval}'")
+        raise ValueError("Invalid interval.")
+    if symbol == None:  
+        allLogger.error(f"Invalid symbol. Your 'symbol' is None")
+        raise ValueError("Invalid symbol.") 
+    # if startTime == None:   startTime = str(current_finish_kline_time(time_frame=15) * 1000)
+    # if endTime == None: endTime = str((current_finish_kline_time(time_frame=15) + 1) * 1000)
+
+    startTime, endTime = current_finish_kline_time(time_frame=15, n_bar=n)
+    startTime = str(startTime * 1000)
+    endTime = str(endTime * 1000)
 
 # ====================================================================================================
 
@@ -102,16 +114,16 @@ def get_kline(symbol = None, interval = None, startTime = None, endTime = None):
     response = requests.request("GET", url, headers=headers, data=payload)
     
     
-    print ("'''''''''''''''''''''''''''")
-    print(f"Symbol = {symbol}")
-    print(f"Interval = {interval}")
-    # StartTime and EndTime +28800 => UTC+8
-    print(f"StartTime = {datetime.datetime.fromtimestamp((int(startTime)/1000)+28800).strftime('%Y-%m-%d %H:%M')}")
-    print(f"EndTime = {datetime.datetime.fromtimestamp((int(endTime)/1000)+28800).strftime('%Y-%m-%d %H:%M')}")
-    print(f"Get '{len(response.json())}' Klines")
-    print ("'''''''''''''''''''''''''''")
 
-    print(response.json())
+    allLogger.info("================== K Lines Info ==================")
+    allLogger.info(f"Symbol = {symbol}")
+    allLogger.info(f"Interval = {interval}")
+    allLogger.info(f"Start Time = {datetime.datetime.fromtimestamp((int(startTime)/1000)+28800).strftime('%Y-%m-%d %H:%M')}")
+    allLogger.info(f"End Time = {datetime.datetime.fromtimestamp((int(endTime)/1000)+28800).strftime('%Y-%m-%d %H:%M')}")
+    allLogger.info(f"Get '{len(response.json())}' k bars")
+    # allLogger.info(response.json())
+    allLogger.info("==================================================")
+
 
     return response.json()[0]
 
